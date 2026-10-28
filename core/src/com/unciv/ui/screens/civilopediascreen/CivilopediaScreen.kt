@@ -15,7 +15,6 @@ import com.unciv.models.stats.INamed
 import com.unciv.models.translations.tr
 import com.unciv.ui.components.extensions.colorFromRGB
 import com.unciv.ui.components.extensions.getCloseButton
-import com.unciv.ui.components.extensions.scrollTo
 import com.unciv.ui.components.extensions.toImageButton
 import com.unciv.ui.components.extensions.toLabel
 import com.unciv.ui.components.input.ActivationTypes
@@ -353,7 +352,9 @@ class CivilopediaScreen private constructor(
         entrySelectScroll.validate()
         entrySelectTable.validate()
         val row = entrySelectTable.children.first { it.name == name }
-        entrySelectScroll.scrollTo(row, center = true)
+        // Center vertically only: rows are as wide as the longest entry name, so horizontal centering scrolls the list sideways.
+        // A zero-size target at the row's vertical middle avoids the Gdx 1.14.2 offset noted in our ScrollPane.scrollTo(Actor) extension.
+        entrySelectScroll.scrollTo(0f, row.y + row.height / 2, 0f, 0f, false, true)
         if (noScrollAnimation)
             entrySelectScroll.updateVisualScroll()     // snap without animation on fresh pedia open
         updateEntry(entry)
