@@ -139,6 +139,16 @@ class TranslationTests {
     }
 
     @Test
+    fun allAutomaticPromotionsOptionsHaveTemplate() {
+        setupUncivGame() // empty translations, so toString() returns the untranslated label
+        val allKeys = TranslationFileReader.readTemplates { lines ->
+            lines.filter { it.endsWith(" = ") }.map { it.removeSuffix(" = ") }.toSet()
+        } ?: return
+        val missing = GameSettings.AutomaticPromotions.entries.map { it.toString() }.filterNot { it in allKeys }
+        Assert.assertEquals("Promotion automation options missing from template.properties", emptyList<String>(), missing)
+    }
+
+    @Test
     fun translationsFromJSONsCanBeGenerated() {
         // Triggers generation of the translation's strings
         // Will output "Translation writer took...", which is suppressed unless you use the @RedirectOutput(RedirectPolicy.Show) annotation
