@@ -110,6 +110,13 @@ class TranslationTests {
         )
     }
 
+    // The belief key stays "God of craftsmen" so saves keep loading; English.properties fixes the displayed casing (#15915)
+    @Test
+    fun godOfCraftsmenDisplaysWithCapitalC() {
+        loadTranslations()
+        Assert.assertEquals("God of Craftsmen", translations.getText("God of craftsmen", Constants.english))
+    }
+
 
     @Test
     fun allUnitActionsHaveTemplate() {
