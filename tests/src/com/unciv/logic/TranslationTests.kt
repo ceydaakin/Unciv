@@ -333,6 +333,21 @@ class TranslationTests {
     }
 
     @Test
+    fun automaticPromotionsOffHasOwnTemplate() {
+        // #15942: "Disabled" is shared with plural contexts, so the single setting needs its own "Off" key
+        val allKeys = TranslationFileReader.readTemplates { lines ->
+            lines.filter { it.endsWith(" = ") }.map { it.removeSuffix(" = ") }.toSet()
+        } ?: return
+        Assert.assertTrue("template.properties should have an \"Off\" key", "Off" in allKeys)
+
+        setupUncivGame()
+        addTranslation("Disabled", "plural form")
+        addTranslation("Off", "single form")
+        TranslationCache.invalidateLanguage()
+        Assert.assertEquals("single form", GameSettings.AutomaticPromotions.Off.toString())
+    }
+
+    @Test
     fun wordBoundaryTranslationIsFormattedCorrectly() {
         loadTranslations()
         val translationEntry = translations["\" \""]!!
