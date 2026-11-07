@@ -8,6 +8,7 @@ import com.unciv.models.ruleset.unique.UniqueTriggerActivation
 import com.unciv.testing.BaseTestRunner
 import com.unciv.testing.TestGame
 import com.unciv.testing.runTestParcours
+import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -42,5 +43,23 @@ class TileFilterTests {
             "Land", 35,
             "Farm", 0,
         )
+    }
+
+    /** Catches #15959: civFilters on the tile owner must be relative to the observing civ */
+    @Test
+    fun ownerCivFilterIsRelativeToObservingCiv() {
+        setupModdedGame()
+        val otherCiv = game.addCiv()
+        val ownedTile = city.getCenterTile()
+
+        Assert.assertFalse(ownedTile.matchesFilter("Known", otherCiv))
+        civ.diplomacyFunctions.makeCivilizationsMeet(otherCiv)
+        Assert.assertTrue(ownedTile.matchesFilter("Known", otherCiv))
+        Assert.assertFalse(ownedTile.matchesFilter("Hostile", otherCiv))
+
+        otherCiv.getDiplomacyManager(civ)!!.declareWar()
+        Assert.assertTrue(ownedTile.matchesFilter("Hostile", otherCiv))
+        Assert.assertTrue(ownedTile.matchesFilter("Foreign", otherCiv))
+        Assert.assertFalse(ownedTile.matchesFilter("Hostile", civ))
     }
 }

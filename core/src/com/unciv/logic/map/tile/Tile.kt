@@ -600,7 +600,8 @@ class Tile : IsPartOfGameInfoSerialization, TileInterface<Tile> {
                 if (allTerrains.any { it.matchesFilter(filter, stateThisTile, false) }) return true
 
                 val owner = getOwner()
-                if (owner != null && owner.matchesFilter(filter, stateThisTile, false)) return true
+                // Relative civFilters (Hostile, Known, ...) need the observer as context, see #15959
+                if (owner != null && owner.matchesFilter(filter, observingCiv?.state ?: stateThisTile, false)) return true
 
                 // Checks 'luxury resource', 'strategic resource' and 'bonus resource' - only those that are visible of course
                 // not using canSeeResource as observingCiv is often not passed in,

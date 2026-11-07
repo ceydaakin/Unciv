@@ -20,7 +20,7 @@ internal class ConsoleTileCommands: ConsoleCommandNode {
 
         "checkfilter" to ConsoleAction("tile checkfilter <tileFilter>") { console, params ->
             val selectedTile = console.getSelectedTile()
-            DevConsoleResponse.hint(selectedTile.matchesFilter(params[0].originalUnquoted()).toString())
+            DevConsoleResponse.hint(selectedTile.matchesFilter(params[0].originalUnquoted(), console.screen.selectedCiv).toString())
         },
 
         "setimprovement" to ConsoleAction("tile setimprovement <improvementName> [civName]") { console, params ->
