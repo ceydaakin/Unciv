@@ -72,6 +72,30 @@ class MapGenerationTests {
     }
 
     @Test
+    fun strategicMajorDepositsArePlacedOnCoast() {
+        // #15958: Oil's "<in [{Featureless} {Coast}] tiles>" weighting must match the terrain rule for Coast,
+        // otherwise coastal Oil only appears next to city-states
+        RulesetCache.loadRulesets(noMods = true)
+        ruleSet = RulesetCache.getVanillaRuleset()
+        val gameInfo = GameInfo()
+        gameInfo.ruleset = ruleSet
+        for (nation in ruleSet.nations.values.filter { it.isMajorCiv }.take(4)) {
+            val civ = Civilization(nation)
+            civ.gameInfo = gameInfo
+            gameInfo.civilizations.add(civ)
+        }
+        val mapParameters = MapParameters()
+        mapParameters.type = MapType.archipelago
+        mapParameters.mapSize = MapSize.Small
+        mapParameters.seed = 1
+
+        val tileMap = MapGenerator(ruleSet).generateMap(mapParameters, gameInfo = gameInfo)
+
+        val coastalOil = tileMap.values.count { it.baseTerrain == "Coast" && it.resource == "Oil" }
+        Assert.assertTrue("Expected major Oil deposits on Coast, found $coastalOil", coastalOil >= 3)
+    }
+
+    @Test
     fun terrainTileCountsReasonableForHexMaps() {
         RulesetCache.loadRulesets(noMods = true)
         ruleSet = RulesetCache.getVanillaRuleset()
