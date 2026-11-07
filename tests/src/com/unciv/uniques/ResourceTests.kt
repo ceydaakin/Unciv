@@ -352,4 +352,40 @@ class ResourceTests {
         // then
         assertEquals(2, civInfo.getCivResourcesByName()[resource.name])
     }
+
+    /** #15954: "[in this city]" uniques of a resource apply only to the city producing it */
+    @Test
+    fun testLocalResourceUniqueOnlyAppliesToProducingCity() {
+        val bigGame = TestGame().apply { makeHexagonalMap(5) }
+        val resource = bigGame.createResource("[+15]% Production when constructing [All] wonders [in this city]")
+        val civ = bigGame.addCiv()
+        val producingCity = bigGame.addCity(civ, bigGame.tileMap[0, 0], true)
+        val otherCity = bigGame.addCity(civ, bigGame.tileMap[4, 0])
+        producingCity.cityConstructions.addBuilding(bigGame.createBuilding("Provides [1] [${resource.name}]"))
+
+        for (city in listOf(producingCity, otherCity)) {
+            val wonder = bigGame.createWonder()
+            city.cityConstructions.addToQueue(wonder.name)
+            assertEquals(wonder.name, city.cityConstructions.currentConstructionName())
+            city.cityStats.update()
+        }
+
+        assertEquals(15f, producingCity.cityStats.statPercentBonusTree.totalStats.production)
+        assertEquals(0f, otherCity.cityStats.statPercentBonusTree.totalStats.production)
+    }
+
+    /** #15954: a resource the civ gets from outside its cities (e.g. trade) grants no "[in this city]" bonus */
+    @Test
+    fun testLocalResourceUniqueNotGrantedByResourceFromOutsideCities() {
+        val resource = game.createResource("[+15]% Production when constructing [All] wonders [in this city]")
+        val receivingCiv = game.addCiv("Provides [1] [${resource.name}]")
+        val receivingCity = game.addCity(receivingCiv, game.tileMap[2, 0], true)
+        receivingCiv.cache.updateCivResources()
+        Assert.assertTrue(receivingCiv.hasResource(resource.name))
+
+        receivingCity.cityConstructions.addToQueue(game.createWonder().name)
+        receivingCity.cityStats.update()
+
+        assertEquals(0f, receivingCity.cityStats.statPercentBonusTree.totalStats.production)
+    }
 }

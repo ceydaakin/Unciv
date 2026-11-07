@@ -25,6 +25,7 @@ import com.unciv.models.ruleset.Building
 import com.unciv.models.ruleset.tile.TileResource
 import com.unciv.models.ruleset.unique.GameContext
 import com.unciv.models.ruleset.unique.Unique
+import com.unciv.models.ruleset.unique.UniqueMap
 import com.unciv.models.ruleset.unique.UniqueType
 import com.unciv.models.ruleset.unit.BaseUnit
 import com.unciv.models.stats.GameResource
@@ -161,6 +162,9 @@ class City : IsPartOfGameInfoSerialization, INamed {
 
     var avoidGrowth: Boolean = false
     @Transient var currentGPPBonus: Int = 0  // temporary variable saved for rankSpecialist()
+
+    /** Local-effect ("in this city") uniques of resources this city produces itself, set by `CivInfoTransientCache.updateCivResources` */
+    @Transient var resourceUniqueMap = UniqueMap()
 
     /** The very first found city is the _original_ capital,
      * while the _current_ capital can be any other city after the original one is captured.
@@ -664,7 +668,7 @@ class City : IsPartOfGameInfoSerialization, INamed {
         replaceWith = ReplaceWith("forEachLocalMatchingUnique"))
     fun getLocalMatchingUniques(uniqueType: UniqueType, gameContext: GameContext = state): Sequence<Unique> {
         val uniques = cityConstructions.builtBuildingUniqueMap.getUniques(uniqueType).filter { it.isLocalEffect } +
-            religion.getUniques(uniqueType)
+            religion.getUniques(uniqueType) + resourceUniqueMap.getUniques(uniqueType)
         return uniques.filter { !it.isTimedTriggerable && it.conditionalsApply(gameContext) }
                 .flatMap { it.getMultiplied(gameContext) }
     }
@@ -674,6 +678,7 @@ class City : IsPartOfGameInfoSerialization, INamed {
     fun forEachLocalMatchingUnique(uniqueType: UniqueType, gameContext: GameContext = state, op: (unique: Unique)->Unit) {
         cityConstructions.builtBuildingUniqueMap.forEachMatchingUnique(uniqueType, gameContext, isLocalUniqueFilter, op)
         religion.forEachMatchingUnique(uniqueType, gameContext, op)
+        resourceUniqueMap.forEachMatchingUnique(uniqueType, gameContext, op)
     }
 
     // Uniques coming from this city, but that should be provided globally
@@ -751,7 +756,8 @@ class City : IsPartOfGameInfoSerialization, INamed {
     fun getLocalTriggeredUniques(trigger: UniqueType, gameContext: GameContext = state,
         triggerFilter: (Unique) -> Boolean = { true }): Sequence<Unique> {
         val uniques =
-            cityConstructions.builtBuildingUniqueMap.getAllUniques().filter { it.isLocalEffect } + religion.getAllUniques()
+            cityConstructions.builtBuildingUniqueMap.getAllUniques().filter { it.isLocalEffect } + religion.getAllUniques() +
+                resourceUniqueMap.getAllUniques()
         return uniques.filter {
             it.getModifiers(trigger).any(triggerFilter) && it.conditionalsApply(gameContext)
         }.flatMap { it.getMultiplied(gameContext) }
@@ -771,6 +777,7 @@ class City : IsPartOfGameInfoSerialization, INamed {
         fun multipliedOp(unique: Unique) = unique.forEachMultiplied(gameContext, op)
         cityConstructions.builtBuildingUniqueMap.forEachUnique(::buildingFilter, ::multipliedOp)
         religion.forEachUnique(::uniqueFilter, ::multipliedOp)
+        resourceUniqueMap.forEachUnique(::uniqueFilter, ::multipliedOp)
     }
 
     //endregion

@@ -339,7 +339,16 @@ class CivInfoTransientCache(val civInfo: Civilization) {
     fun updateCivResources():Unit = timeThis("CivInfoTransientCache.updateCivResources") {
         updateCityStateBonuses()
         val newDetailedCivResources = ResourceSupplyList()
-        for (city in civInfo.cities) newDetailedCivResources.add(city.getResourcesGeneratedByCity())
+        for (city in civInfo.cities) {
+            val cityResources = city.getResourcesGeneratedByCity()
+            newDetailedCivResources.add(cityResources)
+            // "in this city" resource uniques only apply to the city producing the resource, not civ-wide (#15954)
+            val cityResourceUniqueMap = UniqueMap()
+            for (resource in cityResources.sumByResource("All"))
+                if (resource.amount > 0 && !resource.resource.isCityWide)
+                    cityResourceUniqueMap.addUniques(resource.resource.uniqueObjects.filter { it.isLocalEffect })
+            city.resourceUniqueMap = cityResourceUniqueMap
+        }
 
         if (!civInfo.isCityState) {
             // First we get all these resources of each city state separately
@@ -387,7 +396,7 @@ class CivInfoTransientCache(val civInfo: Civilization) {
         val newResourceUniqueMap = UniqueMap()
         for (resource in summarizedResourceSupply)
             if (resource.amount > 0)
-                newResourceUniqueMap.addUniques(resource.resource.uniqueObjects)
+                newResourceUniqueMap.addUniques(resource.resource.uniqueObjects.filter { !it.isLocalEffect })
         
         civInfo.detailedCivResources = newDetailedCivResources
         civInfo.summarizedCivResourceSupply = summarizedResourceSupply
