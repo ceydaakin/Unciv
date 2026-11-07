@@ -5,7 +5,6 @@ import com.unciv.logic.GameInfo
 import com.unciv.logic.UncivShowableException
 import com.unciv.logic.Version
 import com.unciv.logic.automation.Timers
-import com.unciv.logic.civilization.PlayerType
 import com.unciv.logic.files.UncivFiles
 import com.unciv.logic.multiplayer.Multiplayer
 import com.unciv.models.metadata.GameSettings
@@ -234,9 +233,7 @@ open class UncivGame(val isConsoleMode: Boolean = false) : Game(), PlatformSpeci
             val newWorldScreen = WorldScreen(newGameInfo, autoPlay, newGameInfo.getPlayerToViewAs(), worldScreenRestoreState)
             worldScreen = newWorldScreen
 
-            val moreThanOnePlayer = newGameInfo.civilizations.count { it.playerType == PlayerType.Human } > 1
-            val isSingleplayer = !newGameInfo.gameParameters.isOnlineMultiplayer
-            val screenToShow = if (moreThanOnePlayer && isSingleplayer) {
+            val screenToShow = if (PlayerReadyScreen.isNeeded(newGameInfo, isReloadForSameViewer = worldScreenRestoreState != null)) {
                 PlayerReadyScreen(newWorldScreen)
             } else {
                 newWorldScreen
