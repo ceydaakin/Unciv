@@ -112,9 +112,9 @@ class GameOptionsTable(
         checkboxTable.addIsOnlineMultiplayerCheckbox()
         if (gameParameters.isOnlineMultiplayer){
             checkboxTable.addAnyoneCanSpectateCheckbox()
-            selectBoxTable.addDurationSelectBox("Time until skip turn:", GameParameters::minutesUntilSkipTurn, 1, 0, 0)
-            selectBoxTable.addDurationSelectBox("Total time to play:", GameParameters::minutesUntilForceResign, 3, 0, 0)
-            selectBoxTable.addDurationSelectBox("Time recovered per turn:", GameParameters::minutesRecoveredPerTurn, 3, 0, 0)
+            selectBoxTable.addDurationSelectBox("{Time until skip turn}:", GameParameters::minutesUntilSkipTurn, 1, 0, 0)
+            selectBoxTable.addDurationSelectBox("{Total time to play}:", GameParameters::minutesUntilForceResign, 3, 0, 0)
+            selectBoxTable.addDurationSelectBox("{Time recovered per turn}:", GameParameters::minutesRecoveredPerTurn, 3, 0, 0)
         }
         add(checkboxTable).center().row()
         add(selectBoxTable).center().row()

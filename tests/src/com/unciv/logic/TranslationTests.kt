@@ -139,6 +139,17 @@ class TranslationTests {
     }
 
     @Test
+    fun multiplayerTimeLimitLabelsHaveTemplate() {
+        // Labels of the online multiplayer duration select boxes in GameOptionsTable (#15964)
+        val allKeys = TranslationFileReader.readTemplates { lines ->
+            lines.filter { it.endsWith(" = ") }.map { it.removeSuffix(" = ") }.toSet()
+        } ?: return
+        val labels = listOf("Time until skip turn", "Total time to play", "Time recovered per turn")
+        val missing = labels.filterNot { it in allKeys }
+        Assert.assertEquals("Multiplayer time limit labels missing from template.properties", emptyList<String>(), missing)
+    }
+
+    @Test
     fun translationsFromJSONsCanBeGenerated() {
         // Triggers generation of the translation's strings
         // Will output "Translation writer took...", which is suppressed unless you use the @RedirectOutput(RedirectPolicy.Show) annotation
