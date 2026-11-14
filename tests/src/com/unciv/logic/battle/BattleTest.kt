@@ -2,12 +2,15 @@ package com.unciv.logic.battle
 
 import com.unciv.UncivGame
 import com.unciv.logic.civilization.Civilization
+import com.unciv.logic.civilization.PlayerType
 import com.unciv.logic.civilization.diplomacy.DiplomaticStatus
 import com.unciv.logic.map.HexCoord
 import com.unciv.logic.map.mapunit.MapUnit
 import com.unciv.models.metadata.GameSettings.PathfindingAlgorithm
 import com.unciv.models.metadata.GameSettings.PathfindingAlgorithm.AStarPathfinding
 import com.unciv.models.ruleset.unique.UniqueType
+import com.unciv.models.translations.TranslationFileReader
+import com.unciv.models.translations.getPlaceholderText
 import com.unciv.testing.TestRunnerFactory
 import com.unciv.testing.TestGame
 import junit.framework.TestCase.assertEquals
@@ -308,6 +311,72 @@ class BattleTest(private val pathfindingAlgorithm: PathfindingAlgorithm) {
         // then
         assertEquals(defenderCiv, defenderCity.civ)
         assertEquals(1, defenderCity.health)
+    }
+
+    /** #16010: the city's owner gets the battle notification; it must match a template or it stays English */
+    private fun assertCityOwnerNotificationsHaveTemplate() {
+        val templateKeys = mutableSetOf<String>()
+        TranslationFileReader.readTemplates { templateLines ->
+            for (template in templateLines) {
+                if (template.isEmpty() || template.startsWith('#')) continue
+                templateKeys.add(template.substringBefore(" = ").getPlaceholderText())
+            }
+        }
+        val texts = defenderCiv.notifications.map { it.text }.filter { it.startsWith("An enemy [") }
+        assertTrue("No battle notification was sent", texts.isNotEmpty())
+        for (text in texts)
+            assertTrue("No template matches \"$text\"", text.getPlaceholderText() in templateKeys)
+    }
+
+    @Test
+    fun `notification for ranged attack destroying city defence has a template`() {
+        // given
+        defenderCiv.playerType = PlayerType.Human // AI civs get no notifications
+        val attackerUnit = testGame.addUnit("Archer", attackerCiv, testGame.getTile(0,2))
+        val defenderCity = testGame.addCity(defenderCiv, testGame.getTile(0,1), initialPopulation = 1)
+        defenderCity.health = 2
+
+        // when
+        Battle.attack(MapUnitCombatant(attackerUnit), CityCombatant(defenderCity))
+
+        // then
+        assertEquals(1, defenderCity.health)
+        assertCityOwnerNotificationsHaveTemplate()
+    }
+
+    @Test
+    fun `notification for melee capture of city without counter damage has a template`() {
+        // given
+        defenderCiv.playerType = PlayerType.Human // AI civs get no notifications
+        val defenderCity = testGame.addCity(defenderCiv, testGame.getTile(0,1), initialPopulation = 1)
+        defenderCity.health = 1
+        testGame.gameInfo.currentPlayerCiv = testGame.addCiv() // otherwise test crashes when puppetying city
+        testGame.gameInfo.currentPlayer = testGame.gameInfo.currentPlayerCiv.civID
+
+        // when
+        val damageDealt = Battle.attack(MapUnitCombatant(defaultAttackerUnit), CityCombatant(defenderCity))
+
+        // then
+        assertEquals(attackerCiv, defenderCity.civ)
+        assertEquals(0, damageDealt.defenderDealt)
+        assertCityOwnerNotificationsHaveTemplate()
+    }
+
+    @Test
+    fun `notification for barbarian raid without counter damage has a template`() {
+        // given
+        defenderCiv.playerType = PlayerType.Human // AI civs get no notifications
+        val barbarianCiv = testGame.addBarbarianCiv()
+        val barbarianUnit = testGame.addUnit("Warrior", barbarianCiv, testGame.getTile(0,2))
+        val defenderCity = testGame.addCity(defenderCiv, testGame.getTile(0,1), initialPopulation = 1)
+        defenderCity.health = 1
+
+        // when
+        val damageDealt = Battle.attack(MapUnitCombatant(barbarianUnit), CityCombatant(defenderCity))
+
+        // then
+        assertEquals(0, damageDealt.defenderDealt)
+        assertCityOwnerNotificationsHaveTemplate()
     }
 
     @Test
