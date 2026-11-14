@@ -109,15 +109,21 @@ class CivInfoStatsForNextTurn(val civInfo: Civilization) {
             }
         }
 
+        fun addTerritoryMaintenance(improvement: TileImprovement, state: GameContext) {
+            addMaintenanceUniques(improvement, UniqueType.ImprovementMaintenance, state)
+            addMaintenanceUniques(improvement, UniqueType.ImprovementAllMaintenance, state)
+        }
+
         for (city in civInfo.cities) {
             for (tile in city.getTiles()) {
                 if (tile.isCityCenter()) continue
-                if (tile.getUnpillagedRoad() == RoadStatus.None) continue // Cheap checks before pricey checks
+                val road = tile.getUnpillagedRoadImprovement()
+                val improvement = tile.getUnpillagedTileImprovement()
+                if (road == null && improvement == null) continue // Cheap checks before pricey checks
                 if (ignoredTileTypes.any { tile.matchesFilter(it, civInfo) }) continue
-                val road = tile.getUnpillagedRoadImprovement()!!  // covered by RoadStatus.None test
                 val gameContext = GameContext(civInfo, tile = tile)
-                addMaintenanceUniques(road, UniqueType.ImprovementMaintenance, gameContext)
-                addMaintenanceUniques(road, UniqueType.ImprovementAllMaintenance, gameContext)
+                if (road != null) addTerritoryMaintenance(road, gameContext)
+                if (improvement != null) addTerritoryMaintenance(improvement, gameContext)
             }
         }
 

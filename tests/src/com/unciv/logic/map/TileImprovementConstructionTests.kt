@@ -481,6 +481,21 @@ class TileImprovementConstructionTests {
         Assert.assertEquals(goldBeforeTurn + predictedGoldDelta, civ.gold)
     }
 
+    @Test
+    fun nonRoadImprovementMaintenanceIsCharged() {
+        val (game, civ, city) = roadMaintenanceGame()
+        replaceImprovementMaintenance(game.ruleset, "Farm", UniqueType.ImprovementAllMaintenance.text.fillPlaceholders("1", "Gold"))
+        val farmTile = ownedNonCenterTile(city)
+        farmTile.setBaseTerrain(game.ruleset.terrains[Constants.grassland]!!)
+        assertTransportationUpkeep(civ, 0f)
+
+        farmTile.setImprovement("Farm", civ)
+        assertTransportationUpkeep(civ, -1f)
+
+        farmTile.setPillaged()
+        assertTransportationUpkeep(civ, 0f)
+    }
+
     private data class RoadMaintenanceSetup(val game: TestGame, val civ: Civilization, val city: City)
 
     private fun roadMaintenanceGame(
