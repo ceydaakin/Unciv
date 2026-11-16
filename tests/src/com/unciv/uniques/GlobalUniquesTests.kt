@@ -632,6 +632,19 @@ class GlobalUniquesTests {
         Assert.assertTrue(abs(city.cityStats.happinessList["Population"]!! - -1f) < epsilon)
     }
 
+    @Test
+    fun statPercentBonusHappiness() {
+        val civInfo = game.addCiv()
+        val city = game.addCity(civInfo, game.getTile(HexCoord.Zero), true, initialPopulation = 4)
+        val building = game.createBuilding("[+2 Happiness]", "[+100]% [Happiness]")
+        city.cityConstructions.addBuilding(building)
+
+        city.cityStats.update()
+        Assert.assertTrue(abs(city.cityStats.happinessList["Buildings"]!! - 4f) < epsilon)
+        // Unhappiness is not a produced stat, so the bonus doesn't scale it
+        Assert.assertTrue(abs(city.cityStats.happinessList["Population"]!! - -4f) < epsilon)
+    }
+
 
     // endregion happiness
 

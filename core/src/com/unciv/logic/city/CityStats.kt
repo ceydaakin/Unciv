@@ -422,18 +422,21 @@ class CityStats(val city: City) {
 
         if (hasExtraAnnexUnhappiness()) newHappinessList["Occupied City"] = -2f //annexed city
 
+        // "[relativeAmount]% [Happiness]" scales the happiness this city produces, not its unhappiness
+        val happinessPercentBonus = statPercentBonusTree.totalStats.happiness.toPercent()
+
         val happinessFromSpecialists = statsFromSpecialists.happiness.toInt().toFloat()
-        if (happinessFromSpecialists > 0) newHappinessList["Specialists"] = happinessFromSpecialists
+        if (happinessFromSpecialists > 0) newHappinessList["Specialists"] = happinessFromSpecialists * happinessPercentBonus
 
-        newHappinessList["Buildings"] = statsFromBuildings.totalStats.happiness.toInt().toFloat()
+        newHappinessList["Buildings"] = statsFromBuildings.totalStats.happiness.toInt().toFloat() * happinessPercentBonus
 
-        newHappinessList["Tile yields"] = statsFromTiles.happiness
+        newHappinessList["Tile yields"] = statsFromTiles.happiness * happinessPercentBonus
 
         val happinessBySource = statsFromUniquesBySource
         for ((source, stats) in happinessBySource.children)
             if (stats.totalStats.happiness != 0f) {
                 if (!newHappinessList.containsKey(source)) newHappinessList[source] = 0f
-                newHappinessList[source] = newHappinessList[source]!! + stats.totalStats.happiness
+                newHappinessList[source] = newHappinessList[source]!! + stats.totalStats.happiness * happinessPercentBonus
             }
 
         // we don't want to modify the existing happiness list because that leads
@@ -507,8 +510,8 @@ class CityStats(val city: City) {
         val statsFromSpecialists = getStatsFromSpecialists(city.population.getNewSpecialists())
         val statsFromUniquesBySource = getStatsFromUniquesBySource()
         updateBaseStatList(statsFromBuildings, statsFromSpecialists, statsFromUniquesBySource)
+        updateStatPercentBonusList(currentConstruction) // before happiness, which applies the Happiness percentage
         updateCityHappiness(statsFromBuildings, statsFromSpecialists, statsFromUniquesBySource)
-        updateStatPercentBonusList(currentConstruction)
 
         updateFinalStatList(currentConstruction, calculateGrowthModifiers) // again, we don't edit the existing currentCityStats directly, in order to avoid concurrency exceptions
 
